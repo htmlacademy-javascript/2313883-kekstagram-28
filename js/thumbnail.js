@@ -4,7 +4,7 @@ const thumbnailTemplate = document
 const container = document.querySelector('.pictures');
 
 
-const createThumbnail = ({comments, description, likes, url}) => {
+const createThumbnail = ({ comments, description, likes, url }) => {
   const thumbnail = thumbnailTemplate.cloneNode(true);
 
   thumbnail.querySelector('.picture__img').src = url;
@@ -25,4 +25,4 @@ const renderThumbnails = (pictures) => {
   container.append(fragment);
 };
 
-export {renderThumbnails};
+export { renderThumbnails };
