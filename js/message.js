@@ -22,7 +22,7 @@ document.addEventListener('click', (evt) => {
   }
 });
 
-const showSuccessMessage = () => {
+const showSuccess = () => {
   document.body.append(messageSuccess);
   document.addEventListener('keydown', onDocumentKeydown);
 };
@@ -39,7 +39,7 @@ document.addEventListener('click', (evt) => {
   }
 });
 
-const showErrorMessage = () => {
+const showError = () => {
   document.body.append(messageError);
   document.addEventListener('keydown', onDocumentKeydown);
 };
@@ -53,4 +53,5 @@ function onDocumentKeydown(evt) {
   }
 }
 
-export {showSuccessMessage, showErrorMessage};
+export {showSuccess, showError};
+
