@@ -1,5 +1,22 @@
-import { getPictures } from './data.js';
 import { renderGallery } from './gallery.js';
-import './form.js';
+import { hideModal, setFormSubmit } from './form.js';
+import { getData, sendData } from './api.js';
+import { showAlert } from './util.js';
+import { showSuccess, showError} from './message.js';
 
-renderGallery(getPictures());
+setFormSubmit(async (data) => {
+  try {
+    await sendData(data);
+    hideModal();
+    showSuccess();
+  } catch {
+    showError();
+  }
+});
+
+try {
+  const data = await getData();
+  renderGallery(data);
+} catch (err) {
+  showAlert(err.message);
+}

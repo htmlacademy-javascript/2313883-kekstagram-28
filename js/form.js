@@ -1,64 +1,31 @@
-import {resetScale} from './scale.js';
-import {resetEffects} from './effect.js';
+import { resetScale } from './scale.js';
+import { resetEffects } from './effect.js';
 
+const HASHTAG = /^#[a-zа-яё0-9]{1,19}$/i;
+const MAX_HASHTAG_LENGTH = 20;
 const TAG_ERROR_TEXT = 'Неправильно заполнены хэштеги';
-const HASHTAG_MAX_COUNT = 50;
-const VALID_SYMBOL = /^#[a-za-яё0-9]{1,19}$/i;
 
-const body = document.querySelector('body');
-const form = document.querySelector('.img-upload__form');
-const cancelButton = document.querySelector('.img-upload__cancel');
-const overlay = document.querySelector('.img-upload__overlay');
-const fileField = document.querySelector('#upload-file');
-const hashtagField = document.querySelector('.text__hashtags');
-const coomentField = document.querySelector('.text__description');
-
-const pristine = new Pristine(form, {
-  classTo: 'img-upload__field-wrapper',
-  errorTextParent: 'img-upload__field-wrapper',
-  errorTextClass: 'img-upload__field-wrapper__error',
-});
-
-const showModal = () => {
-  overlay.classList.remove('hidden');
-  body.classList.add('modal-open');
-  document.addEventListener('keydown', onModalKeydown);
+const SubmitButtonText = {
+  IDLE: 'Опубликовать',
+  SENDING: 'Загружаем...'
 };
 
-const hideModal = () => {
-  form.reset();
-  resetScale();
-  resetEffects();
-  pristine.reset();
-  overlay.classList.add('hidden');
-  body.classList.remove('modal-open');
-  document.removeEventListener('keydown', onModalKeydown);
-};
+const imgForm = document.querySelector('.img-upload__form');
+const loadForm = imgForm.querySelector('.img-upload__overlay');
+const openButton = imgForm.querySelector('#upload-file');
+const closeButton = imgForm.querySelector('#upload-cancel');
+const hashtagsInput = imgForm.querySelector('.text__hashtags');
+const commentInput = imgForm.querySelector('.text__description');
+const submitButton = imgForm.querySelector('.img-upload__submit');
 
-const isTextFieldFocused = () =>
-  document.activeElement === hashtagField ||
-  document.activeElement === coomentField;
+const isValidTag = (tag) => HASHTAG.test(tag);
+const isValidCount = (tags) => tags.length <= MAX_HASHTAG_LENGTH;
 
-function onModalKeydown(evt) {
-  if (evt.key === 'Escape' && !isTextFieldFocused()) {
-    evt.preventDefault();
-    hideModal();
-  }
-}
+const isTextFieldFocuced = () =>
+  document.activeElement === hashtagsInput ||
+  document.activeElement === commentInput;
 
-const onFileFieldChange = () => {
-  showModal();
-};
-
-const onCancelButtonClick = () => {
-  hideModal();
-};
-
-const isValidTag = (tag) => VALID_SYMBOL.test(tag);
-
-const hasValidCount = (tags) => tags.length <= HASHTAG_MAX_COUNT;
-
-const hasUniqueTags = (tags) => {
+const uniqueTags = (tags) => {
   const lowerCaseTags = tags.map((tag) => tag.toLowerCase());
   return lowerCaseTags.length === new Set(lowerCaseTags).size;
 };
@@ -68,20 +35,80 @@ const validateTags = (value) => {
     .trim()
     .split(' ')
     .filter((tag) => tag.trim().length);
-  return hasValidCount(tags) && hasUniqueTags(tags) && tags.every(isValidTag);
+  return isValidCount(tags) && uniqueTags(tags) && tags.every(isValidTag);
 };
 
-pristine.addValidator(
-  hashtagField,
-  validateTags,
-  TAG_ERROR_TEXT
-);
+const pristine = new Pristine(imgForm, {
+  classTo: 'img-upload__field-wrapper',
+  errorTextParent: 'img-upload__field-wrapper',
+  errorTextClass: 'img-upload__field-wrapper__error',
+});
+
+
+const blockSubmitButton = () => {
+  submitButton.disabled = true;
+  submitButton.textContent = SubmitButtonText.SENDING;
+};
+
+const unblockSubmitButton = () => {
+  submitButton.disabled = false;
+  submitButton.textContent = SubmitButtonText.IDLE;
+};
+
+const setFormSubmit = (cb) => {
+  imgForm.addEventListener('submit', async (evt) => {
+    evt.preventDefault();
+    const isValid = pristine.validate();
+    if (isValid) {
+      blockSubmitButton();
+      await cb(new FormData(imgForm));
+      unblockSubmitButton();
+    }
+  });
+};
+
+const showModal = () => {
+  loadForm.classList.remove('hidden');
+  document.body.classList.add('modal-open');
+  document.addEventListener('keydown', onDocumentKeydown);
+};
+
+const hideModal = () => {
+  imgForm.reset();
+  pristine.reset();
+  resetScale();
+  resetEffects();
+  loadForm.classList.add('hidden');
+  document.body.classList.remove('modal-open');
+  document.removeEventListener('keydown', onDocumentKeydown);
+};
+
+function onDocumentKeydown(evt) {
+  if (evt.key === 'Escape' && !isTextFieldFocuced()) {
+    evt.preventDefault();
+    hideModal();
+  }
+}
 
 const onFormSubmit = (evt) => {
   evt.preventDefault();
   pristine.validate();
 };
 
-fileField.addEventListener('change', onFileFieldChange);
-cancelButton.addEventListener('click', onCancelButtonClick);
-form.addEventListener('submit', onFormSubmit);
+pristine.addValidator(
+  hashtagsInput,
+  validateTags,
+  TAG_ERROR_TEXT
+);
+
+imgForm.addEventListener('submit', (evt) => {
+  evt.preventDefault();
+  pristine.validate();
+});
+
+openButton.addEventListener('change', showModal);
+closeButton.addEventListener('click', hideModal);
+imgForm.addEventListener('submit', onFormSubmit);
+
+export { hideModal, setFormSubmit };
+
